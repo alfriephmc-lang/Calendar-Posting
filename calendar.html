@@ -20,7 +20,6 @@
 
         body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: #fff; height: 100vh; margin: 0; display: flex; overflow: hidden; }
 
-        /* Sidebar Styling */
         #main-sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 280px; background: var(--card-bg); border-right: 1px solid var(--border); z-index: 100; transition: transform 0.3s ease; display: flex; flex-direction: column; }
         @media (max-width: 1023px) { 
             #main-sidebar { transform: translateX(-100%); } 
@@ -28,30 +27,31 @@
         }
         @media (min-width: 1024px) { #main-sidebar { position: relative; transform: none !important; flex-shrink: 0; } }
 
-        /* Calendar Styling */
         #calendar-container { flex: 1; min-width: 0; padding: 10px; display: flex; flex-direction: column; position: relative; }
         .fc { height: 100% !important; background: var(--card-bg); border-radius: 24px; padding: 15px; border: 1px solid var(--border) !important; }
         .fc-event { border: none !important; padding: 4px 8px !important; border-radius: 6px !important; font-weight: 600; cursor: pointer; font-size: 0.75rem; }
 
-        /* Event Colors */
         .event-reels { background: rgba(168, 85, 247, 0.15) !important; color: #d8b4fe !important; border-left: 3px solid var(--reels) !important; }
         .event-corporate-event { background: rgba(59, 130, 246, 0.15) !important; color: #93c5fd !important; border-left: 3px solid var(--corporate) !important; }
         .event-services { background: rgba(16, 185, 129, 0.15) !important; color: var(--accent) !important; border-left: 3px solid var(--accent) !important; }
 
-        /* Mobile Toggle Button */
         #menu-toggle { position: fixed; bottom: 25px; right: 25px; z-index: 999; width: 55px; height: 55px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; cursor: pointer; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); }
         @media (min-width: 1024px) { #menu-toggle { display: none !important; } }
 
-        /* Loading Spinner */
-        #loader { position: absolute; inset: 0; background: rgba(2, 15, 12, 0.8); backdrop-filter: blur(4px); z-index: 50; display: flex; flex-direction: column; items-center; justify-content: center; transition: opacity 0.3s ease; }
+        #loader { position: absolute; inset: 0; background: rgba(2, 15, 12, 0.8); backdrop-filter: blur(4px); z-index: 50; display: flex; flex-direction: column; items-center; justify-content: center; display: none; }
         .spinner { width: 40px; height: 40px; border: 3px solid rgba(16, 185, 129, 0.1); border-top: 3px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         #details-drawer { position: fixed; right: 0; top: 0; bottom: 0; width: 100%; max-width: 360px; background: #041411; transform: translateX(100%); transition: transform 0.4s ease; z-index: 200; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
         #details-drawer.open { transform: translateX(0); }
+
+        /* Toast Message */
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; padding: 12px 24px; border-radius: 12px; font-size: 12px; font-weight: bold; display: none; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
+
+    <div id="toast"></div>
 
     <div id="menu-toggle" onclick="document.getElementById('main-sidebar').classList.toggle('active')">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
@@ -127,7 +127,7 @@
             <textarea id="new-desc" placeholder="Details/Notes..." class="w-full bg-white/5 p-4 rounded-xl mb-6 h-24 outline-none border border-white/5 text-white"></textarea>
             
             <div class="flex gap-4">
-                <button onclick="saveEvent()" class="flex-grow bg-emerald-500 py-4 rounded-xl text-black font-black text-xs uppercase transition-all shadow-lg shadow-emerald-500/20">Confirm</button>
+                <button id="confirm-btn" onclick="saveEvent()" class="flex-grow bg-emerald-500 py-4 rounded-xl text-black font-black text-xs uppercase transition-all shadow-lg shadow-emerald-500/20">Confirm</button>
                 <button onclick="toggleModal(false)" class="px-6 text-[10px] font-bold opacity-30 text-white">Cancel</button>
             </div>
         </div>
@@ -140,11 +140,20 @@
 
         let calendar, activeEventId, isEditMode, userRole = 'guest';
 
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            toast.style.background = isError ? '#ef4444' : '#10b981';
+            toast.style.color = isError ? '#fff' : '#000';
+            setTimeout(() => toast.style.display = 'none', 4000);
+        }
+
         async function updateUI(session) {
             const display = document.getElementById('user-display');
             const roleText = document.getElementById('user-role');
             if (session) {
-                const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
+                const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
                 if (profile) {
                     userRole = profile.role;
                     display.innerText = profile.full_name;
@@ -173,7 +182,8 @@
                     document.getElementById('loader').style.display = isLoading ? 'flex' : 'none';
                 },
                 events: async (info, success) => {
-                    const { data } = await supabaseClient.from('events').select('*');
+                    const { data, error } = await supabaseClient.from('events').select('*');
+                    if (error) console.error("Event fetch error:", error);
                     success((data || []).map(e => ({
                         id: e.id, title: e.title, start: e.event_date,
                         className: `event-${e.category.replace(/\s+/g, '-')}`,
@@ -195,10 +205,27 @@
         }
 
         function toggleModal(s) { document.getElementById('event-modal').classList.toggle('hidden', !s); }
-        function openCreateModal() { isEditMode = false; toggleModal(true); }
+        function openCreateModal() { 
+            isEditMode = false; 
+            document.getElementById('new-title').value = '';
+            document.getElementById('new-desc').value = '';
+            toggleModal(true); 
+        }
         function closeDrawer() { document.getElementById('details-drawer').classList.remove('open'); }
+        
+        function openEditModal() {
+            isEditMode = true;
+            const ev = calendar.getEventById(activeEventId);
+            document.getElementById('new-title').value = ev.title;
+            document.getElementById('new-category').value = ev.extendedProps.category;
+            document.getElementById('new-date').value = ev.startStr;
+            document.getElementById('new-time').value = ev.extendedProps.time;
+            document.getElementById('new-desc').value = ev.extendedProps.description;
+            toggleModal(true);
+        }
 
         async function saveEvent() {
+            const btn = document.getElementById('confirm-btn');
             const data = { 
                 title: document.getElementById('new-title').value,
                 category: document.getElementById('new-category').value,
@@ -206,13 +233,45 @@
                 event_time: document.getElementById('new-time').value,
                 description: document.getElementById('new-desc').value
             };
-            if (isEditMode) await supabaseClient.from('events').update(data).eq('id', activeEventId);
-            else {
+
+            if (!data.title || !data.event_date) return showToast("Title and Date are required", true);
+
+            btn.disabled = true;
+            btn.innerText = "Saving...";
+
+            let response;
+            if (isEditMode) {
+                response = await supabaseClient.from('events').update(data).eq('id', activeEventId);
+            } else {
                 const { data: { user } } = await supabaseClient.auth.getUser();
                 data.created_by = user.id;
-                await supabaseClient.from('events').insert([data]);
+                response = await supabaseClient.from('events').insert([data]);
             }
-            toggleModal(false); closeDrawer(); calendar.refetchEvents();
+
+            if (response.error) {
+                showToast(response.error.message, true);
+                console.error("Save Error:", response.error);
+            } else {
+                showToast("Event Saved Successfully!", false);
+                toggleModal(false); 
+                closeDrawer(); 
+                calendar.refetchEvents();
+            }
+
+            btn.disabled = false;
+            btn.innerText = "Confirm";
+        }
+
+        async function deleteEvent() {
+            if (confirm("Delete this event?")) {
+                const { error } = await supabaseClient.from('events').delete().eq('id', activeEventId);
+                if (error) showToast(error.message, true);
+                else {
+                    showToast("Event Deleted", false);
+                    closeDrawer(); 
+                    calendar.refetchEvents();
+                }
+            }
         }
 
         async function handleLogout() {
