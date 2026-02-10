@@ -16,13 +16,9 @@
             --border: rgba(16, 185, 129, 0.1);
         }
         body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: #fff; margin: 0; opacity: 0; transition: opacity 0.5s ease; }
-        
-        /* Navigation (Matches Calendar) */
         nav { background: rgba(5, 26, 21, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 70px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1000; }
         .nav-link { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.4); transition: all 0.3s; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
         .nav-link.active { color: var(--accent); background: rgba(16, 185, 129, 0.1); }
-        
-        /* Dashboard Content */
         .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 24px; padding: 24px; }
         .chart-container { height: 220px; position: relative; }
         #access-denied { display: none; }
@@ -33,27 +29,22 @@
     <div id="access-denied" class="fixed inset-0 bg-black z-[2000] flex flex-col items-center justify-center text-center p-6">
         <h1 class="text-6xl mb-4">🚫</h1>
         <h2 class="text-2xl font-black uppercase text-red-500">Access Restricted</h2>
-        <p class="text-white/40 text-sm mt-2">Only Admins, Managers, and Heads can access this data.</p>
         <button onclick="window.location.href='calendar.html'" class="mt-8 px-8 py-4 bg-emerald-500 text-black font-black uppercase text-xs rounded-xl">Return to Calendar</button>
     </div>
 
     <nav>
-        <div class="flex items-center gap-4">
-            <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-8">
-        </div>
+        <div class="flex items-center gap-4"><img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-8"></div>
         <div class="flex gap-2">
             <a href="calendar.html" class="nav-link">Calendar</a>
             <a href="dashboard.html" class="nav-link active">Dashboard</a>
         </div>
-        <div class="hidden md:block">
-            <p id="nav-user" class="text-[10px] font-black uppercase text-emerald-500 tracking-widest">Verifying Auth...</p>
-        </div>
+        <div class="hidden md:block"><p id="nav-user" class="text-[10px] font-black uppercase text-emerald-500 tracking-widest">Verifying...</p></div>
     </nav>
 
     <main class="max-w-7xl mx-auto px-6 mt-10">
         <div class="mb-10">
             <h1 class="text-4xl font-black tracking-tighter text-white uppercase">Management Dashboard</h1>
-            <p class="text-emerald-500 text-[10px] font-bold tracking-[4px] uppercase mt-2">Data Insights & Performance</p>
+            <p class="text-emerald-500 text-[10px] font-bold tracking-[4px] uppercase mt-2">Synchronized Category Data</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -73,24 +64,16 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="stat-card">
-                <p class="text-[10px] uppercase font-black tracking-widest text-purple-400 mb-6">Reels Monthly Trend</p>
-                <div class="chart-container">
-                    <canvas id="chartReels"></canvas>
-                </div>
+                <p class="text-[10px] uppercase font-black tracking-widest text-purple-400 mb-6">Reels Trend</p>
+                <div class="chart-container"><canvas id="chartReels"></canvas></div>
             </div>
-
             <div class="stat-card">
-                <p class="text-[10px] uppercase font-black tracking-widest text-blue-400 mb-6">Corporate Monthly Trend</p>
-                <div class="chart-container">
-                    <canvas id="chartCorp"></canvas>
-                </div>
+                <p class="text-[10px] uppercase font-black tracking-widest text-blue-400 mb-6">Corporate Trend</p>
+                <div class="chart-container"><canvas id="chartCorp"></canvas></div>
             </div>
-
             <div class="stat-card">
-                <p class="text-[10px] uppercase font-black tracking-widest text-emerald-400 mb-6">Services Monthly Trend</p>
-                <div class="chart-container">
-                    <canvas id="chartServ"></canvas>
-                </div>
+                <p class="text-[10px] uppercase font-black tracking-widest text-emerald-400 mb-6">Services Trend</p>
+                <div class="chart-container"><canvas id="chartServ"></canvas></div>
             </div>
         </div>
     </main>
@@ -103,10 +86,8 @@
         async function checkAccess() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
-
             const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
             const allowed = ['admin', 'manager', 'head'];
-
             if (profile && allowed.includes(profile.role.toLowerCase())) {
                 document.body.style.opacity = "1";
                 document.getElementById('nav-user').innerText = profile.full_name;
@@ -121,7 +102,6 @@
             const { data: events } = await supabaseClient.from('events').select('*');
             if (!events) return;
 
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             const stats = {
                 reels: { total: 0, monthly: Array(12).fill(0) },
                 corp: { total: 0, monthly: Array(12).fill(0) },
@@ -136,16 +116,24 @@
                 else if (cat === 'services') { stats.serv.total++; stats.serv.monthly[m]++; }
             });
 
+            // Calculate Global Maximum for Y-Axis Sync
+            const allMonthlyValues = [
+                ...stats.reels.monthly, 
+                ...stats.corp.monthly, 
+                ...stats.serv.monthly
+            ];
+            const globalMax = Math.max(...allMonthlyValues) + 1; // Add 1 for visual padding
+
             document.getElementById('total-reels').innerText = stats.reels.total;
             document.getElementById('total-corp').innerText = stats.corp.total;
             document.getElementById('total-serv').innerText = stats.serv.total;
 
-            createChart('chartReels', 'Reels', stats.reels.monthly, '#a855f7');
-            createChart('chartCorp', 'Corporate', stats.corp.monthly, '#3b82f6');
-            createChart('chartServ', 'Services', stats.serv.monthly, '#10b981');
+            createChart('chartReels', 'Reels', stats.reels.monthly, '#a855f7', globalMax);
+            createChart('chartCorp', 'Corporate', stats.corp.monthly, '#3b82f6', globalMax);
+            createChart('chartServ', 'Services', stats.serv.monthly, '#10b981', globalMax);
         }
 
-        function createChart(id, label, data, color) {
+        function createChart(id, label, data, color, maxScale) {
             new Chart(document.getElementById(id), {
                 type: 'bar',
                 data: {
@@ -162,7 +150,12 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { beginAtZero: true, ticks: { color: 'rgba(255,255,255,0.2)', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { 
+                            beginAtZero: true, 
+                            max: maxScale, // SYNCED SCALE
+                            ticks: { color: 'rgba(255,255,255,0.2)', stepSize: 1 }, 
+                            grid: { color: 'rgba(255,255,255,0.05)' } 
+                        },
                         x: { ticks: { color: 'rgba(255,255,255,0.2)' }, grid: { display: false } }
                     }
                 }
