@@ -22,23 +22,37 @@
 
         /* Sidebar Styling */
         #main-sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 280px; background: var(--card-bg); border-right: 1px solid var(--border); z-index: 100; transition: transform 0.3s ease; display: flex; flex-direction: column; }
-        @media (max-width: 1023px) { #main-sidebar { transform: translateX(-100%); } #main-sidebar.active { transform: translateX(0); box-shadow: 20px 0 50px rgba(0,0,0,0.8); } }
-        @media (min-width: 1024px) { #main-sidebar { position: relative; transform: none !important; flex-shrink: 0; } }
+        
+        /* Mobile logic: Slide out on small screens */
+        @media (max-width: 1023px) { 
+            #main-sidebar { transform: translateX(-100%); } 
+            #main-sidebar.active { transform: translateX(0); box-shadow: 20px 0 50px rgba(0,0,0,0.8); } 
+        }
+        
+        /* Desktop logic: Fixed sidebar */
+        @media (min-width: 1024px) { 
+            #main-sidebar { position: relative; transform: none !important; flex-shrink: 0; } 
+        }
 
         /* Calendar Styling */
-        #calendar-container { flex: 1; min-width: 0; padding: 10px; display: flex; flex-direction: column; position: relative; }
+        #calendar-container { flex: 1; min-width: 0; padding: 10px; display: flex; flex-direction: column; position: relative; z-index: 10; }
         .fc { height: 100% !important; background: var(--card-bg); border-radius: 24px; padding: 15px; border: 1px solid var(--border) !important; }
         .fc-event { border: none !important; padding: 4px 8px !important; border-radius: 6px !important; font-weight: 600; cursor: pointer; font-size: 0.75rem; }
-        .fc-event-time { display: none !important; }
 
-        /* Event Colors */
+        /* Category Colors */
         .event-reels { background: rgba(168, 85, 247, 0.15) !important; color: #d8b4fe !important; border-left: 3px solid var(--reels) !important; }
         .event-corporate-event { background: rgba(59, 130, 246, 0.15) !important; color: #93c5fd !important; border-left: 3px solid var(--corporate) !important; }
         .event-services { background: rgba(16, 185, 129, 0.15) !important; color: var(--accent) !important; border-left: 3px solid var(--accent) !important; }
 
-        /* Mobile Toggle Button (The thing in your image) */
-        #menu-toggle { position: fixed; bottom: 25px; right: 25px; z-index: 150; width: 55px; height: 55px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); cursor: pointer; }
-        @media (min-width: 1024px) { #menu-toggle { display: none; } } /* Hide on desktop */
+        /* FIXED MOBILE TOGGLE */
+        #menu-toggle { 
+            position: fixed; bottom: 25px; right: 25px; z-index: 999; 
+            width: 55px; height: 55px; background: var(--accent); 
+            border-radius: 50%; display: flex; align-items: center; 
+            justify-content: center; color: #000; cursor: pointer;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        }
+        @media (min-width: 1024px) { #menu-toggle { display: none !important; } }
 
         #details-drawer { position: fixed; right: 0; top: 0; bottom: 0; width: 100%; max-width: 360px; background: #041411; transform: translateX(100%); transition: transform 0.4s ease; z-index: 200; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
         #details-drawer.open { transform: translateX(0); }
@@ -54,7 +68,7 @@
         <div class="p-8 flex flex-col items-center">
             <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-16 mb-6">
             <div class="w-full bg-white/5 rounded-2xl p-4 border border-white/5 text-center">
-                <p id="user-display" class="text-xs font-bold text-emerald-400 truncate">Initializing...</p>
+                <p id="user-display" class="text-xs font-bold text-emerald-400 truncate">Syncing Session...</p>
                 <p id="user-role" class="text-[9px] uppercase tracking-widest opacity-40 mt-1 italic">Please Wait</p>
             </div>
         </div>
@@ -90,17 +104,17 @@
     <div id="event-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl hidden z-[300] flex items-center justify-center p-6">
         <div class="bg-[#051a15] p-8 rounded-[32px] w-full max-w-md border border-white/10">
             <h3 class="text-center font-black uppercase text-emerald-500 text-[10px] tracking-[4px] mb-8">Schedule Event</h3>
-            <input type="text" id="new-title" placeholder="Event Title" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5">
-            <select id="new-category" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5 text-sm">
+            <input type="text" id="new-title" placeholder="Event Title" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5 text-white">
+            <select id="new-category" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5 text-sm text-white bg-[#051a15]">
                 <option value="reels">Reels</option>
                 <option value="corporate event">Corporate Event</option>
                 <option value="services">Services</option>
             </select>
             <div class="flex gap-4 mb-4">
-                <input type="date" id="new-date" class="flex-1 bg-white/5 p-4 rounded-xl text-sm outline-none border border-white/5">
-                <input type="time" id="new-time" class="flex-1 bg-white/5 p-4 rounded-xl text-sm outline-none border border-white/5">
+                <input type="date" id="new-date" class="flex-1 bg-white/5 p-4 rounded-xl text-sm outline-none border border-white/5 text-white">
+                <input type="time" id="new-time" class="flex-1 bg-white/5 p-4 rounded-xl text-sm outline-none border border-white/5 text-white">
             </div>
-            <textarea id="new-desc" placeholder="Details/Notes..." class="w-full bg-white/5 p-4 rounded-xl mb-6 h-24 outline-none border border-white/5"></textarea>
+            <textarea id="new-desc" placeholder="Details/Notes..." class="w-full bg-white/5 p-4 rounded-xl mb-6 h-24 outline-none border border-white/5 text-white"></textarea>
             <div class="flex gap-4">
                 <button onclick="saveEvent()" class="flex-grow bg-emerald-500 py-4 rounded-xl text-black font-black text-xs uppercase transition-all shadow-lg shadow-emerald-500/20">Confirm</button>
                 <button onclick="toggleModal(false)" class="px-6 text-[10px] font-bold opacity-30">Cancel</button>
@@ -129,21 +143,17 @@
                     document.getElementById('admin-add-btn').classList.toggle('hidden', !canEdit);
                     document.getElementById('staff-controls').classList.toggle('hidden', !canEdit);
                 } else {
-                    display.innerText = "Profile Syncing...";
-                    roleText.innerText = "Check Database";
+                    display.innerText = "Setting up Profile...";
                 }
             } else {
-                display.innerText = "Guest View";
-                roleText.innerText = "Read Only";
+                display.innerText = "Public Guest";
+                roleText.innerText = "View Only";
             }
         }
 
         async function init() {
-            // Initial Session Check
             const { data: { session } } = await supabaseClient.auth.getSession();
             updateUI(session);
-
-            // Listen for changes
             supabaseClient.auth.onAuthStateChange((event, session) => updateUI(session));
 
             calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
@@ -176,7 +186,7 @@
         function toggleModal(s) { document.getElementById('event-modal').classList.toggle('hidden', !s); }
         function openCreateModal() { isEditMode = false; toggleModal(true); }
         function closeDrawer() { document.getElementById('details-drawer').classList.remove('open'); }
-
+        
         function openEditModal() {
             isEditMode = true;
             const ev = calendar.getEventById(activeEventId);
