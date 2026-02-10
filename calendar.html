@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProjectVibe | Schedule</title>
+    <title>ProjectVibe | Full Schedule</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -21,42 +21,53 @@
         body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: #fff; height: 100vh; margin: 0; display: flex; flex-direction: column; overflow: hidden; }
 
         /* Top Nav */
-        nav { background: rgba(5, 26, 21, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 70px; display: flex; align-items: center; justify-content: space-between; z-index: 1000; flex-shrink: 0; }
-        .nav-link { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.4); transition: all 0.3s; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
-        .nav-link.active { color: var(--accent); background: rgba(16, 185, 129, 0.1); }
+        nav { background: rgba(5, 26, 21, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 0 1.5rem; height: 70px; display: flex; align-items: center; justify-content: space-between; z-index: 1000; flex-shrink: 0; }
+        .nav-link { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.4); padding: 10px 15px; cursor: pointer; transition: 0.3s; }
+        .nav-link.active { color: var(--accent); background: rgba(16, 185, 129, 0.1); border-radius: 8px; }
 
-        /* Layout */
-        .app-container { display: flex; flex: 1; overflow: hidden; position: relative; }
-
-        /* Sidebar */
-        #main-sidebar { width: 280px; background: var(--card-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 100; transition: transform 0.3s ease; }
+        /* Sidebar & Safe Area Fix */
+        #main-sidebar { 
+            width: 280px; background: var(--card-bg); border-right: 1px solid var(--border); 
+            display: flex; flex-direction: column; z-index: 2000; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
         @media (max-width: 1023px) { 
-            #main-sidebar { position: absolute; left: 0; top: 0; bottom: 0; transform: translateX(-100%); } 
-            #main-sidebar.active { transform: translateX(0); box-shadow: 20px 0 50px rgba(0,0,0,0.8); } 
+            #main-sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); } 
+            #main-sidebar.active { transform: translateX(0); box-shadow: 20px 0 80px rgba(0,0,0,0.9); } 
         }
 
-        /* Calendar */
-        #calendar-container { flex: 1; min-width: 0; padding: 20px; position: relative; overflow-y: auto; }
-        .fc { height: 100% !important; background: var(--card-bg); border-radius: 24px; padding: 15px; border: 1px solid var(--border) !important; color: white; }
-        .fc-event { border: none !important; padding: 4px 8px !important; border-radius: 6px !important; font-weight: 600; cursor: pointer; font-size: 0.75rem; }
+        .sidebar-footer { 
+            padding: 2rem 2rem calc(2rem + env(safe-area-inset-bottom, 32px)); 
+            border-top: 1px solid var(--border);
+        }
 
-        /* Event Categories */
-        .event-reels { background: rgba(168, 85, 247, 0.15) !important; color: #d8b4fe !important; border-left: 3px solid var(--reels) !important; }
-        .event-corporate-event { background: rgba(59, 130, 246, 0.15) !important; color: #93c5fd !important; border-left: 3px solid var(--corporate) !important; }
-        .event-services { background: rgba(16, 185, 129, 0.15) !important; color: var(--accent) !important; border-left: 3px solid var(--accent) !important; }
+        /* Calendar Container */
+        #calendar-container { flex: 1; min-width: 0; padding: 15px; position: relative; overflow: hidden; }
+        .fc { height: 100% !important; background: var(--card-bg); border-radius: 24px; padding: 10px; border: 1px solid var(--border) !important; color: white; }
+        .fc-event { border: none !important; padding: 4px 8px !important; border-radius: 6px !important; font-weight: 600; cursor: pointer; font-size: 0.7rem; }
 
-        /* Drawer */
-        #details-drawer { position: fixed; right: 0; top: 70px; bottom: 0; width: 100%; max-width: 360px; background: #041411; transform: translateX(100%); transition: transform 0.4s ease; z-index: 500; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+        /* Details Drawer */
+        #details-drawer { position: fixed; right: 0; top: 70px; bottom: 0; width: 100%; max-width: 360px; background: #041411; transform: translateX(100%); transition: transform 0.4s ease; z-index: 1500; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
         #details-drawer.open { transform: translateX(0); }
 
+        /* Floating Menu Toggle - Highest Z-Index */
+        #menu-toggle { 
+            position: fixed; bottom: 30px; right: 25px; z-index: 3000; 
+            width: 60px; height: 60px; background: var(--accent); border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; color: #000; 
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.5); cursor: pointer;
+        }
+        @media (min-width: 1024px) { #menu-toggle { display: none !important; } }
+
         /* Loader & Toast */
-        #loader { position: absolute; inset: 0; background: rgba(2, 15, 12, 0.8); backdrop-filter: blur(4px); z-index: 50; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #loader { position: absolute; inset: 0; background: rgba(2, 15, 12, 0.8); backdrop-filter: blur(4px); z-index: 50; display: none; align-items: center; justify-content: center; }
         .spinner { width: 40px; height: 40px; border: 3px solid rgba(16, 185, 129, 0.1); border-top: 3px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #toast { position: fixed; top: 85px; left: 50%; transform: translateX(-50%); z-index: 2000; padding: 12px 24px; border-radius: 12px; font-size: 11px; font-weight: bold; display: none; text-transform: uppercase; letter-spacing: 1px; }
+        #toast { position: fixed; top: 85px; left: 50%; transform: translateX(-50%); z-index: 4000; padding: 12px 24px; border-radius: 12px; font-size: 11px; font-weight: bold; display: none; text-transform: uppercase; }
 
-        #menu-toggle { position: fixed; bottom: 25px; right: 25px; z-index: 999; width: 55px; height: 55px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; cursor: pointer; }
-        @media (min-width: 1024px) { #menu-toggle { display: none !important; } }
+        /* Event Coloring */
+        .event-reels { border-left: 4px solid var(--reels) !important; background: rgba(168, 85, 247, 0.1) !important; color: #d8b4fe !important; }
+        .event-corporate-event { border-left: 4px solid var(--corporate) !important; background: rgba(59, 130, 246, 0.1) !important; color: #93c5fd !important; }
+        .event-services { border-left: 4px solid var(--accent) !important; background: rgba(16, 185, 129, 0.1) !important; color: #6ee7b7 !important; }
     </style>
 </head>
 <body>
@@ -64,44 +75,41 @@
     <div id="toast"></div>
 
     <nav>
-        <div class="flex items-center gap-4">
-            <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-8">
-        </div>
+        <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-8">
         <div class="flex gap-2">
-            <a href="calendar.html" class="nav-link active">Calendar</a>
+            <span class="nav-link active">Calendar</span>
             <div onclick="handleDashboardClick()" class="nav-link">Dashboard</div>
-        </div>
-        <div class="hidden md:block">
-            <p id="nav-user" class="text-[10px] font-black uppercase text-emerald-500 tracking-widest">Guest</p>
         </div>
     </nav>
 
-    <div class="app-container">
+    <div class="flex flex-1 overflow-hidden relative">
         <aside id="main-sidebar">
-            <div class="p-8 flex flex-col items-center">
+            <div class="p-8 flex flex-col items-center border-b border-white/5">
                 <div class="w-full bg-white/5 rounded-2xl p-4 text-center border border-white/5">
-                    <p id="user-display" class="text-xs font-bold text-white truncate">Initializing...</p>
-                    <p id="user-role" class="text-[9px] uppercase tracking-widest text-emerald-500 mt-1 italic font-black">Syncing</p>
+                    <p id="user-display" class="text-xs font-bold text-white truncate">User Name</p>
+                    <p id="user-role" class="text-[9px] uppercase tracking-widest text-emerald-500 mt-1 italic font-black">Role</p>
                 </div>
             </div>
-            <div class="px-6 flex-1">
-                <button onclick="openCreateModal()" id="admin-add-btn" class="hidden w-full py-4 bg-emerald-500 text-black text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/10">+ New Entry</button>
+            <div class="px-6 py-8 flex-1">
+                <button onclick="openCreateModal()" id="admin-add-btn" class="hidden w-full py-4 bg-emerald-500 text-black text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-emerald-400 shadow-lg shadow-emerald-500/10">
+                    + New Entry
+                </button>
             </div>
-            <div class="p-8 border-t border-white/5">
-                <button onclick="handleLogout()" class="w-full text-[10px] text-red-500/40 uppercase font-black tracking-widest hover:text-red-500">Sign Out</button>
+            <div class="sidebar-footer">
+                <button onclick="handleLogout()" class="w-full py-4 border border-red-500/20 text-red-500 text-[10px] uppercase font-black tracking-widest rounded-xl">
+                    Sign Out
+                </button>
             </div>
         </aside>
 
-        <div id="calendar-container">
-            <div id="loader">
-                <div class="spinner"></div>
-            </div>
+        <main id="calendar-container">
+            <div id="loader"><div class="spinner"></div></div>
             <div id="calendar"></div>
-        </div>
+        </main>
 
         <div id="details-drawer">
             <div class="p-6 border-b border-white/5 flex justify-between items-center">
-                <span id="drawer-category" class="text-[10px] uppercase font-black tracking-widest text-emerald-500">Info</span>
+                <span id="drawer-category" class="text-[10px] uppercase font-black tracking-widest text-emerald-500">Event Info</span>
                 <button onclick="closeDrawer()" class="text-3xl opacity-20 hover:opacity-100">&times;</button>
             </div>
             <div class="p-10 flex-1 overflow-y-auto">
@@ -111,41 +119,41 @@
                 <p id="side-desc" class="text-sm text-white/60 leading-relaxed whitespace-pre-wrap"></p>
             </div>
             <div id="staff-controls" class="hidden p-6 border-t border-white/5 flex gap-3">
-                <button onclick="openEditModal()" class="flex-1 py-3 border border-white/10 rounded-xl text-xs hover:bg-white/5">Edit</button>
-                <button onclick="deleteEvent()" class="flex-1 py-3 border border-red-500/20 text-red-500 rounded-xl text-xs hover:bg-red-500/10">Delete</button>
+                <button onclick="openEditModal()" class="flex-1 py-3 border border-white/10 rounded-xl text-xs uppercase font-black tracking-widest">Edit</button>
+                <button onclick="deleteEvent()" class="flex-1 py-3 border border-red-500/20 text-red-500 rounded-xl text-xs uppercase font-black tracking-widest">Delete</button>
             </div>
         </div>
     </div>
 
-    <div id="auth-modal" class="fixed inset-0 bg-black/90 backdrop-blur-xl hidden z-[3000] flex items-center justify-center p-6">
-        <div class="bg-[#051a15] p-10 rounded-[32px] w-full max-w-sm border border-red-500/20 text-center">
-            <h3 class="font-black uppercase text-red-500 text-sm tracking-[3px] mb-2">Access Denied</h3>
+    <div id="auth-modal" class="fixed inset-0 bg-black/90 backdrop-blur-xl hidden z-[5000] flex items-center justify-center p-6 text-center">
+        <div class="bg-[#051a15] p-10 rounded-[32px] border border-red-500/20 max-w-sm">
+            <h3 class="font-black uppercase text-red-500 text-sm tracking-[3px] mb-4">Access Denied</h3>
             <p class="text-white/40 text-xs mb-8">Role (Staff) is not authorized for Dashboard.</p>
-            <button onclick="toggleAuthModal(false)" class="w-full bg-white/5 py-4 rounded-xl text-white font-black text-xs uppercase border border-white/10">Back</button>
+            <button onclick="toggleAuthModal(false)" class="w-full bg-white/5 py-4 rounded-xl text-xs uppercase font-black">Go Back</button>
         </div>
     </div>
 
-    <div id="event-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl hidden z-[2000] flex items-center justify-center p-6">
+    <div id="event-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl hidden z-[4000] flex items-center justify-center p-6">
         <div class="bg-[#051a15] p-8 rounded-[32px] w-full max-w-md border border-white/10">
-            <h3 class="text-center font-black uppercase text-emerald-500 text-[10px] mb-8">Schedule Event</h3>
+            <h3 id="modal-title" class="text-center font-black uppercase text-emerald-500 text-[10px] tracking-[4px] mb-8">Schedule Event</h3>
             <input type="text" id="new-title" placeholder="Event Title" class="w-full bg-white/5 p-4 rounded-xl mb-4 text-white outline-none">
-            <select id="new-category" class="w-full bg-white/5 p-4 rounded-xl mb-4 text-white bg-[#051a15]">
+            <select id="new-category" class="w-full bg-white/5 p-4 rounded-xl mb-4 text-white bg-[#051a15] outline-none">
                 <option value="reels">Reels</option>
                 <option value="corporate event">Corporate Event</option>
                 <option value="services">Services</option>
             </select>
             <div class="flex gap-4 mb-4">
-                <input type="date" id="new-date" class="flex-1 bg-white/5 p-4 rounded-xl text-white">
-                <input type="time" id="new-time" class="flex-1 bg-white/5 p-4 rounded-xl text-white">
+                <input type="date" id="new-date" class="flex-1 bg-white/5 p-4 rounded-xl text-white outline-none">
+                <input type="time" id="new-time" class="flex-1 bg-white/5 p-4 rounded-xl text-white outline-none">
             </div>
-            <textarea id="new-desc" placeholder="Details..." class="w-full bg-white/5 p-4 rounded-xl mb-6 h-24 text-white"></textarea>
-            <button id="confirm-btn" onclick="saveEvent()" class="w-full bg-emerald-500 py-4 rounded-xl text-black font-black text-xs uppercase">Confirm</button>
-            <button onclick="toggleModal(false)" class="w-full mt-4 text-[10px] font-bold opacity-30">Cancel</button>
+            <textarea id="new-desc" placeholder="Details..." class="w-full bg-white/5 p-4 rounded-xl mb-6 h-24 text-white outline-none"></textarea>
+            <button id="confirm-btn" onclick="saveEvent()" class="w-full bg-emerald-500 py-4 rounded-xl text-black font-black text-xs uppercase tracking-widest">Confirm</button>
+            <button onclick="toggleModal(false)" class="w-full mt-4 text-[10px] font-bold opacity-30 uppercase">Cancel</button>
         </div>
     </div>
 
     <div id="menu-toggle" onclick="document.getElementById('main-sidebar').classList.toggle('active')">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
     </div>
 
     <script>
@@ -153,7 +161,7 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqdnBoYWF1cXNydWtsamt4bXlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2NjE3NjgsImV4cCI6MjA4NjIzNzc2OH0.M85d-Z2h5lD8UJxB7SNx2MZwa2owmehprRYXMGpsSis';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        let calendar, activeEventId, isEditMode, userRole = 'guest';
+        let calendar, activeEventId, isEditMode, userRole = 'staff';
 
         function showToast(msg, isErr = false) {
             const t = document.getElementById('toast');
@@ -164,38 +172,38 @@
         }
 
         async function updateUI(session) {
-            if (session) {
-                const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-                if (profile) {
-                    userRole = profile.role.toLowerCase();
-                    document.getElementById('user-display').innerText = profile.full_name;
-                    document.getElementById('user-role').innerText = profile.role;
-                    document.getElementById('nav-user').innerText = profile.full_name;
-                    const canEdit = ['admin', 'manager', 'head'].includes(userRole);
-                    document.getElementById('admin-add-btn').classList.toggle('hidden', !canEdit);
-                    document.getElementById('staff-controls').classList.toggle('hidden', !canEdit);
-                }
+            if (!session) return;
+            const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+            if (profile) {
+                userRole = profile.role.toLowerCase();
+                document.getElementById('user-display').innerText = profile.full_name;
+                document.getElementById('user-role').innerText = profile.role;
+                const isAdmin = ['admin', 'manager', 'head'].includes(userRole);
+                document.getElementById('admin-add-btn').classList.toggle('hidden', !isAdmin);
+                document.getElementById('staff-controls').classList.toggle('hidden', !isAdmin);
             }
         }
 
         function handleDashboardClick() {
-            const allowed = ['admin', 'manager', 'head'];
-            if (allowed.includes(userRole)) window.location.href = 'dashboard.html';
+            if (['admin', 'manager', 'head'].includes(userRole)) window.location.href = 'dashboard.html';
             else toggleAuthModal(true);
         }
 
         function toggleAuthModal(s) { document.getElementById('auth-modal').classList.toggle('hidden', !s); }
         function toggleModal(s) { document.getElementById('event-modal').classList.toggle('hidden', !s); }
         function closeDrawer() { document.getElementById('details-drawer').classList.remove('open'); }
-        
-        function openCreateModal() { 
-            isEditMode = false; 
-            document.getElementById('new-title').value = ''; 
-            toggleModal(true); 
+
+        function openCreateModal() {
+            isEditMode = false;
+            document.getElementById('modal-title').innerText = "Schedule Event";
+            document.getElementById('new-title').value = '';
+            document.getElementById('new-desc').value = '';
+            toggleModal(true);
         }
 
         function openEditModal() {
             isEditMode = true;
+            document.getElementById('modal-title').innerText = "Edit Event";
             const ev = calendar.getEventById(activeEventId);
             document.getElementById('new-title').value = ev.title;
             document.getElementById('new-category').value = ev.extendedProps.category;
@@ -206,7 +214,6 @@
         }
 
         async function saveEvent() {
-            const btn = document.getElementById('confirm-btn');
             const data = { 
                 title: document.getElementById('new-title').value,
                 category: document.getElementById('new-category').value,
@@ -214,9 +221,9 @@
                 event_time: document.getElementById('new-time').value,
                 description: document.getElementById('new-desc').value
             };
-            if (!data.title || !data.event_date) return showToast("Title/Date required", true);
+            if (!data.title || !data.event_date) return showToast("Title & Date required", true);
             
-            btn.disabled = true; btn.innerText = "Saving...";
+            document.getElementById('loader').style.display = 'flex';
             let res;
             if (isEditMode) res = await supabaseClient.from('events').update(data).eq('id', activeEventId);
             else {
@@ -227,11 +234,11 @@
 
             if (res.error) showToast(res.error.message, true);
             else { showToast("Success!"); toggleModal(false); closeDrawer(); calendar.refetchEvents(); }
-            btn.disabled = false; btn.innerText = "Confirm";
+            document.getElementById('loader').style.display = 'none';
         }
 
         async function deleteEvent() {
-            if (confirm("Delete?")) {
+            if (confirm("Delete this event?")) {
                 const { error } = await supabaseClient.from('events').delete().eq('id', activeEventId);
                 if (error) showToast(error.message, true);
                 else { showToast("Deleted"); closeDrawer(); calendar.refetchEvents(); }
@@ -246,8 +253,7 @@
         async function init() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             updateUI(session);
-            supabaseClient.auth.onAuthStateChange((e, s) => updateUI(s));
-
+            
             calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
                 initialView: 'dayGridMonth',
                 headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
@@ -262,12 +268,12 @@
                     })));
                 },
                 eventClick: (info) => {
-                    const p = info.event.extendedProps;
                     activeEventId = info.event.id;
+                    const p = info.event.extendedProps;
                     document.getElementById('side-title').innerText = info.event.title;
                     document.getElementById('side-date').innerText = info.event.startStr;
-                    document.getElementById('side-time').innerText = p.time;
-                    document.getElementById('side-desc').innerText = p.description || '';
+                    document.getElementById('side-time').innerText = p.time || 'All Day';
+                    document.getElementById('side-desc').innerText = p.description || 'No description provided.';
                     document.getElementById('drawer-category').innerText = p.category;
                     document.getElementById('details-drawer').classList.add('open');
                 }
