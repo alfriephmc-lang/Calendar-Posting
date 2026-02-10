@@ -22,37 +22,30 @@
 
         /* Sidebar Styling */
         #main-sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 280px; background: var(--card-bg); border-right: 1px solid var(--border); z-index: 100; transition: transform 0.3s ease; display: flex; flex-direction: column; }
-        
-        /* Mobile logic: Slide out on small screens */
         @media (max-width: 1023px) { 
             #main-sidebar { transform: translateX(-100%); } 
             #main-sidebar.active { transform: translateX(0); box-shadow: 20px 0 50px rgba(0,0,0,0.8); } 
         }
-        
-        /* Desktop logic: Fixed sidebar */
-        @media (min-width: 1024px) { 
-            #main-sidebar { position: relative; transform: none !important; flex-shrink: 0; } 
-        }
+        @media (min-width: 1024px) { #main-sidebar { position: relative; transform: none !important; flex-shrink: 0; } }
 
         /* Calendar Styling */
-        #calendar-container { flex: 1; min-width: 0; padding: 10px; display: flex; flex-direction: column; position: relative; z-index: 10; }
+        #calendar-container { flex: 1; min-width: 0; padding: 10px; display: flex; flex-direction: column; position: relative; }
         .fc { height: 100% !important; background: var(--card-bg); border-radius: 24px; padding: 15px; border: 1px solid var(--border) !important; }
         .fc-event { border: none !important; padding: 4px 8px !important; border-radius: 6px !important; font-weight: 600; cursor: pointer; font-size: 0.75rem; }
 
-        /* Category Colors */
+        /* Event Colors */
         .event-reels { background: rgba(168, 85, 247, 0.15) !important; color: #d8b4fe !important; border-left: 3px solid var(--reels) !important; }
         .event-corporate-event { background: rgba(59, 130, 246, 0.15) !important; color: #93c5fd !important; border-left: 3px solid var(--corporate) !important; }
         .event-services { background: rgba(16, 185, 129, 0.15) !important; color: var(--accent) !important; border-left: 3px solid var(--accent) !important; }
 
-        /* FIXED MOBILE TOGGLE */
-        #menu-toggle { 
-            position: fixed; bottom: 25px; right: 25px; z-index: 999; 
-            width: 55px; height: 55px; background: var(--accent); 
-            border-radius: 50%; display: flex; align-items: center; 
-            justify-content: center; color: #000; cursor: pointer;
-            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
-        }
+        /* Mobile Toggle Button */
+        #menu-toggle { position: fixed; bottom: 25px; right: 25px; z-index: 999; width: 55px; height: 55px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; cursor: pointer; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); }
         @media (min-width: 1024px) { #menu-toggle { display: none !important; } }
+
+        /* Loading Spinner */
+        #loader { position: absolute; inset: 0; background: rgba(2, 15, 12, 0.8); backdrop-filter: blur(4px); z-index: 50; display: flex; flex-direction: column; items-center; justify-content: center; transition: opacity 0.3s ease; }
+        .spinner { width: 40px; height: 40px; border: 3px solid rgba(16, 185, 129, 0.1); border-top: 3px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         #details-drawer { position: fixed; right: 0; top: 0; bottom: 0; width: 100%; max-width: 360px; background: #041411; transform: translateX(100%); transition: transform 0.4s ease; z-index: 200; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
         #details-drawer.open { transform: translateX(0); }
@@ -68,7 +61,7 @@
         <div class="p-8 flex flex-col items-center">
             <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-16 mb-6">
             <div class="w-full bg-white/5 rounded-2xl p-4 border border-white/5 text-center">
-                <p id="user-display" class="text-xs font-bold text-emerald-400 truncate">Syncing Session...</p>
+                <p id="user-display" class="text-xs font-bold text-emerald-400 truncate">Syncing...</p>
                 <p id="user-role" class="text-[9px] uppercase tracking-widest opacity-40 mt-1 italic">Please Wait</p>
             </div>
         </div>
@@ -81,6 +74,10 @@
     </aside>
 
     <div id="calendar-container">
+        <div id="loader">
+            <div class="spinner"></div>
+            <p class="text-[10px] uppercase tracking-[3px] font-bold text-emerald-500 mt-4">Loading Schedule</p>
+        </div>
         <div id="calendar"></div>
     </div>
 
@@ -104,20 +101,34 @@
     <div id="event-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl hidden z-[300] flex items-center justify-center p-6">
         <div class="bg-[#051a15] p-8 rounded-[32px] w-full max-w-md border border-white/10">
             <h3 class="text-center font-black uppercase text-emerald-500 text-[10px] tracking-[4px] mb-8">Schedule Event</h3>
+            
+            <label class="text-[9px] uppercase font-bold text-white/30 ml-2 mb-1 block">Title</label>
             <input type="text" id="new-title" placeholder="Event Title" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5 text-white">
+            
+            <label class="text-[9px] uppercase font-bold text-white/30 ml-2 mb-1 block">Category</label>
             <select id="new-category" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5 text-sm text-white bg-[#051a15]">
                 <option value="reels">Reels</option>
                 <option value="corporate event">Corporate Event</option>
                 <option value="services">Services</option>
             </select>
+            
             <div class="flex gap-4 mb-4">
-                <input type="date" id="new-date" class="flex-1 bg-white/5 p-4 rounded-xl text-sm outline-none border border-white/5 text-white">
-                <input type="time" id="new-time" class="flex-1 bg-white/5 p-4 rounded-xl text-sm outline-none border border-white/5 text-white">
+                <div class="flex-1">
+                    <label class="text-[9px] uppercase font-bold text-white/30 ml-2 mb-1 block">Date</label>
+                    <input type="date" id="new-date" class="w-full bg-white/5 p-4 rounded-xl text-sm outline-none border border-white/5 text-white">
+                </div>
+                <div class="flex-1">
+                    <label class="text-[9px] uppercase font-bold text-white/30 ml-2 mb-1 block">Time</label>
+                    <input type="time" id="new-time" class="w-full bg-white/5 p-4 rounded-xl text-sm outline-none border border-white/5 text-white">
+                </div>
             </div>
+            
+            <label class="text-[9px] uppercase font-bold text-white/30 ml-2 mb-1 block">Description</label>
             <textarea id="new-desc" placeholder="Details/Notes..." class="w-full bg-white/5 p-4 rounded-xl mb-6 h-24 outline-none border border-white/5 text-white"></textarea>
+            
             <div class="flex gap-4">
                 <button onclick="saveEvent()" class="flex-grow bg-emerald-500 py-4 rounded-xl text-black font-black text-xs uppercase transition-all shadow-lg shadow-emerald-500/20">Confirm</button>
-                <button onclick="toggleModal(false)" class="px-6 text-[10px] font-bold opacity-30">Cancel</button>
+                <button onclick="toggleModal(false)" class="px-6 text-[10px] font-bold opacity-30 text-white">Cancel</button>
             </div>
         </div>
     </div>
@@ -132,7 +143,6 @@
         async function updateUI(session) {
             const display = document.getElementById('user-display');
             const roleText = document.getElementById('user-role');
-            
             if (session) {
                 const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
                 if (profile) {
@@ -142,8 +152,6 @@
                     const canEdit = ['admin', 'manager', 'staff'].includes(userRole);
                     document.getElementById('admin-add-btn').classList.toggle('hidden', !canEdit);
                     document.getElementById('staff-controls').classList.toggle('hidden', !canEdit);
-                } else {
-                    display.innerText = "Setting up Profile...";
                 }
             } else {
                 display.innerText = "Public Guest";
@@ -161,6 +169,9 @@
                 headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
                 height: '100%',
                 displayEventTime: false,
+                loading: (isLoading) => {
+                    document.getElementById('loader').style.display = isLoading ? 'flex' : 'none';
+                },
                 events: async (info, success) => {
                     const { data } = await supabaseClient.from('events').select('*');
                     success((data || []).map(e => ({
@@ -186,17 +197,6 @@
         function toggleModal(s) { document.getElementById('event-modal').classList.toggle('hidden', !s); }
         function openCreateModal() { isEditMode = false; toggleModal(true); }
         function closeDrawer() { document.getElementById('details-drawer').classList.remove('open'); }
-        
-        function openEditModal() {
-            isEditMode = true;
-            const ev = calendar.getEventById(activeEventId);
-            document.getElementById('new-title').value = ev.title;
-            document.getElementById('new-category').value = ev.extendedProps.category;
-            document.getElementById('new-date').value = ev.startStr;
-            document.getElementById('new-time').value = ev.extendedProps.time;
-            document.getElementById('new-desc').value = ev.extendedProps.description;
-            toggleModal(true);
-        }
 
         async function saveEvent() {
             const data = { 
@@ -213,13 +213,6 @@
                 await supabaseClient.from('events').insert([data]);
             }
             toggleModal(false); closeDrawer(); calendar.refetchEvents();
-        }
-
-        async function deleteEvent() {
-            if (confirm("Delete this event?")) {
-                await supabaseClient.from('events').delete().eq('id', activeEventId);
-                closeDrawer(); calendar.refetchEvents();
-            }
         }
 
         async function handleLogout() {
