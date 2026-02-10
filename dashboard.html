@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProjectVibe | Admin Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #020f0c;
+            --card-bg: #051a15;
+            --accent: #10b981;
+            --border: rgba(16, 185, 129, 0.1);
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: #fff; opacity: 0; transition: opacity 0.5s ease; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 24px; padding: 24px; }
+        .stat-card:hover { border-color: var(--accent); }
+        #access-denied { display: none; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="access-denied" class="fixed inset-0 bg-black z-[1000] flex flex-col items-center justify-center text-center p-6">
+        <h1 class="text-6xl mb-4">🚫</h1>
+        <h2 class="text-2xl font-black uppercase tracking-tighter text-red-500">Access Restricted</h2>
+        <p class="text-white/40 text-sm mt-2 max-w-xs">This dashboard is only available for Admins, Managers, and Heads.</p>
+        <button onclick="window.location.href='calendar.html'" class="mt-8 px-8 py-4 bg-emerald-500 text-black font-black uppercase text-xs rounded-xl">Return to Calendar</button>
+    </div>
+
+    <div id="dashboard-content" class="max-w-6xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+            <div>
+                <h1 class="text-3xl font-black tracking-tighter text-emerald-500 uppercase">Management Insights</h1>
+                <p id="auth-status" class="text-white/40 text-[10px] font-bold tracking-[3px] uppercase mt-1">Verifying Credentials...</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="calendar.html" class="px-5 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] uppercase font-black tracking-widest hover:bg-white/10">Calendar</a>
+                <button onclick="handleLogout()" class="px-5 py-3 border border-red-500/20 text-red-500 rounded-xl text-[10px] uppercase font-black tracking-widest hover:bg-red-500/10">Sign Out</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="stat-card">
+                <p class="text-[10px] uppercase font-black tracking-widest text-purple-400 mb-2">Total Reels</p>
+                <h2 id="count-reels" class="text-5xl font-black">0</h2>
+            </div>
+            <div class="stat-card">
+                <p class="text-[10px] uppercase font-black tracking-widest text-blue-400 mb-2">Corporate Events</p>
+                <h2 id="count-corp" class="text-5xl font-black">0</h2>
+            </div>
+            <div class="stat-card">
+                <p class="text-[10px] uppercase font-black tracking-widest text-emerald-400 mb-2">Total Services</p>
+                <h2 id="count-serv" class="text-5xl font-black">0</h2>
+            </div>
+        </div>
+
+        <div class="stat-card p-6 md:p-8">
+            <h3 class="text-xs font-black uppercase tracking-[4px] text-white/20 mb-8">Yearly Performance</h3>
+            <div class="h-[300px] md:h-[400px]">
+                <canvas id="analyticsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://ajvphaauqsrukljkxmyf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqdnBoYWF1cXNydWtsamt4bXlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2NjE3NjgsImV4cCI6MjA4NjIzNzc2OH0.M85d-Z2h5lD8UJxB7SNx2MZwa2owmehprRYXMGpsSis';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function checkAccess() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('role')
+                .eq('id', session.user.id)
+                .single();
+
+            const allowedRoles = ['admin', 'manager', 'head'];
+            
+            if (profile && allowedRoles.includes(profile.role.toLowerCase())) {
+                document.body.style.opacity = "1";
+                document.getElementById('auth-status').innerText = `Authorized: ${profile.role}`;
+                loadData();
+            } else {
+                document.getElementById('access-denied').style.display = 'flex';
+                document.body.style.opacity = "1";
+            }
+        }
+
+        async function loadData() {
+            const { data: events } = await supabaseClient.from('events').select('*');
+            if (!events) return;
+
+            const counts = { reels: 0, corp: 0, serv: 0 };
+            const monthlyData = {
+                reels: Array(12).fill(0),
+                corp: Array(12).fill(0),
+                serv: Array(12).fill(0)
+            };
+
+            events.forEach(ev => {
+                const date = new Date(ev.event_date);
+                const month = date.getMonth();
+                const cat = ev.category.toLowerCase();
+
+                if (cat === 'reels') { counts.reels++; monthlyData.reels[month]++; }
+                else if (cat === 'corporate event') { counts.corp++; monthlyData.corp[month]++; }
+                else if (cat === 'services') { counts.serv++; monthlyData.serv[month]++; }
+            });
+
+            document.getElementById('count-reels').innerText = counts.reels;
+            document.getElementById('count-corp').innerText = counts.corp;
+            document.getElementById('count-serv').innerText = counts.serv;
+
+            renderChart(monthlyData);
+        }
+
+        function renderChart(data) {
+            const ctx = document.getElementById('analyticsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [
+                        { label: 'Reels', data: data.reels, borderColor: '#a855f7', tension: 0.4, fill: false },
+                        { label: 'Corporate', data: data.corp, borderColor: '#3b82f6', tension: 0.4, fill: false },
+                        { label: 'Services', data: data.serv, borderColor: '#10b981', tension: 0.4, fill: false }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#fff', font: { weight: 'bold' } } } },
+                    scales: {
+                        y: { ticks: { color: 'rgba(255,255,255,0.3)' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { ticks: { color: 'rgba(255,255,255,0.3)' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+
+        checkAccess();
+    </script>
+</body>
+</html>
