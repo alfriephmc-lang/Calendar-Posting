@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ProjectVibe | Analytics Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,99 +15,140 @@
             --accent: #10b981;
             --border: rgba(16, 185, 129, 0.1);
         }
-        body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: #fff; margin: 0; opacity: 0; transition: opacity 0.5s ease; }
-        nav { background: rgba(5, 26, 21, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 70px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1000; }
-        .nav-link { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.4); transition: all 0.3s; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
-        .nav-link.active { color: var(--accent); background: rgba(16, 185, 129, 0.1); }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: #fff; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* Mobile Sidebar */
+        #main-sidebar { 
+            width: 280px; background: var(--card-bg); border-right: 1px solid var(--border); 
+            display: flex; flex-direction: column; z-index: 2000; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+
+        @media (max-width: 1023px) { 
+            #main-sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); } 
+            #main-sidebar.active { transform: translateX(0); box-shadow: 20px 0 80px rgba(0,0,0,0.9); } 
+        }
+
+        .sidebar-footer { 
+            padding: 2rem 2rem calc(2rem + env(safe-area-inset-bottom, 24px)); 
+            border-top: 1px solid var(--border);
+        }
+
+        /* Floating Menu Button - High Z-Index */
+        #menu-toggle { 
+            position: fixed; bottom: 30px; right: 25px; z-index: 3000; 
+            width: 60px; height: 60px; background: var(--accent); 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            color: #000; cursor: pointer; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.5);
+            border: none; outline: none;
+        }
+        
+        @media (min-width: 1024px) { #menu-toggle { display: none !important; } }
+
+        .app-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 24px; padding: 24px; }
-        .chart-container { height: 220px; position: relative; }
-        #access-denied { display: none; }
     </style>
 </head>
-<body class="pb-12">
+<body>
 
-    <div id="access-denied" class="fixed inset-0 bg-black z-[2000] flex flex-col items-center justify-center text-center p-6">
-        <h1 class="text-6xl mb-4">🚫</h1>
-        <h2 class="text-2xl font-black uppercase text-red-500">Access Restricted</h2>
-        <button onclick="window.location.href='calendar.html'" class="mt-8 px-8 py-4 bg-emerald-500 text-black font-black uppercase text-xs rounded-xl">Return to Calendar</button>
-    </div>
-
-    <nav>
-        <div class="flex items-center gap-4"><img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-8"></div>
-        <div class="flex gap-2">
-            <a href="calendar.html" class="nav-link">Calendar</a>
-            <a href="dashboard.html" class="nav-link active">Dashboard</a>
+    <nav class="bg-[#051a15]/80 backdrop-blur-md border-b border-white/5 px-6 h-[70px] flex items-center justify-between shrink-0 z-[1001]">
+        <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-8">
+        <div class="flex gap-4">
+            <a href="calendar.html" class="text-[10px] font-black uppercase tracking-widest text-white/40">Calendar</a>
+            <span class="text-[10px] font-black uppercase tracking-widest text-emerald-500">Dashboard</span>
         </div>
-        <div class="hidden md:block"><p id="nav-user" class="text-[10px] font-black uppercase text-emerald-500 tracking-widest">Verifying...</p></div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-6 mt-10">
-        <div class="mb-10">
-            <h1 class="text-4xl font-black tracking-tighter text-white uppercase">Management Dashboard</h1>
-            <p class="text-emerald-500 text-[10px] font-bold tracking-[4px] uppercase mt-2">Synchronized Category Data</p>
-        </div>
+    <div class="flex flex-1 overflow-hidden relative">
+        
+        <aside id="main-sidebar">
+            <div class="p-8 flex flex-col items-center border-b border-white/5">
+                <div class="w-full bg-white/5 rounded-2xl p-4 text-center border border-white/5">
+                    <p id="user-display" class="text-xs font-bold text-white truncate">User</p>
+                    <p id="user-role" class="text-[9px] uppercase tracking-widest text-emerald-500 mt-1 italic font-black">Role</p>
+                </div>
+            </div>
+            <div class="p-6 flex-1">
+                <button onclick="window.location.href='calendar.html'" class="w-full py-4 bg-white/5 border border-white/5 text-white text-[10px] font-black rounded-xl uppercase tracking-widest">View Schedule</button>
+            </div>
+            <div class="sidebar-footer">
+                <button onclick="handleLogout()" class="w-full py-4 border border-red-500/20 text-red-500 text-[10px] uppercase font-black tracking-widest rounded-xl hover:bg-red-500/5">Sign Out</button>
+            </div>
+        </aside>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div class="stat-card border-l-4 border-purple-500">
-                <p class="text-[10px] uppercase font-black tracking-widest text-white/30 mb-2">Total Reels</p>
-                <h2 id="total-reels" class="text-5xl font-black">0</h2>
-            </div>
-            <div class="stat-card border-l-4 border-blue-500">
-                <p class="text-[10px] uppercase font-black tracking-widest text-white/30 mb-2">Corporate Events</p>
-                <h2 id="total-corp" class="text-5xl font-black">0</h2>
-            </div>
-            <div class="stat-card border-l-4 border-emerald-500">
-                <p class="text-[10px] uppercase font-black tracking-widest text-white/30 mb-2">Total Services</p>
-                <h2 id="total-serv" class="text-5xl font-black">0</h2>
-            </div>
-        </div>
+        <main class="app-content p-6 md:p-10 w-full">
+            <div class="max-w-6xl mx-auto">
+                <div class="mb-10">
+                    <h1 class="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter">Insights</h1>
+                    <p class="text-emerald-500 text-[10px] font-bold tracking-[4px] uppercase mt-2">Data Analytics</p>
+                </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="stat-card">
-                <p class="text-[10px] uppercase font-black tracking-widest text-purple-400 mb-6">Reels Trend</p>
-                <div class="chart-container"><canvas id="chartReels"></canvas></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    <div class="stat-card border-l-4 border-purple-500">
+                        <p class="text-[10px] font-black text-white/30 uppercase tracking-widest">Reels</p>
+                        <h2 id="total-reels" class="text-4xl font-black mt-2">0</h2>
+                    </div>
+                    <div class="stat-card border-l-4 border-blue-500">
+                        <p class="text-[10px] font-black text-white/30 uppercase tracking-widest">Corporate</p>
+                        <h2 id="total-corp" class="text-4xl font-black mt-2">0</h2>
+                    </div>
+                    <div class="stat-card border-l-4 border-emerald-500">
+                        <p class="text-[10px] font-black text-white/30 uppercase tracking-widest">Services</p>
+                        <h2 id="total-serv" class="text-4xl font-black mt-2">0</h2>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="stat-card">
+                        <p class="text-[10px] font-black tracking-widest text-purple-400 mb-6 uppercase">Monthly Reels</p>
+                        <div class="h-[200px]"><canvas id="chartReels"></canvas></div>
+                    </div>
+                    <div class="stat-card">
+                        <p class="text-[10px] font-black tracking-widest text-blue-400 mb-6 uppercase">Monthly Corp</p>
+                        <div class="h-[200px]"><canvas id="chartCorp"></canvas></div>
+                    </div>
+                    <div class="stat-card">
+                        <p class="text-[10px] font-black tracking-widest text-emerald-400 mb-6 uppercase">Monthly Services</p>
+                        <div class="h-[200px]"><canvas id="chartServ"></canvas></div>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card">
-                <p class="text-[10px] uppercase font-black tracking-widest text-blue-400 mb-6">Corporate Trend</p>
-                <div class="chart-container"><canvas id="chartCorp"></canvas></div>
-            </div>
-            <div class="stat-card">
-                <p class="text-[10px] uppercase font-black tracking-widest text-emerald-400 mb-6">Services Trend</p>
-                <div class="chart-container"><canvas id="chartServ"></canvas></div>
-            </div>
-        </div>
-    </main>
+        </main>
+    </div>
+
+    <button id="menu-toggle" onclick="toggleSidebar()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
 
     <script>
+        // Supabase Init (Using your provided keys)
         const supabaseUrl = 'https://ajvphaauqsrukljkxmyf.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqdnBoYWF1cXNydWtsamt4bXlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2NjE3NjgsImV4cCI6MjA4NjIzNzc2OH0.M85d-Z2h5lD8UJxB7SNx2MZwa2owmehprRYXMGpsSis';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
+        function toggleSidebar() {
+            document.getElementById('main-sidebar').classList.toggle('active');
+        }
+
         async function checkAccess() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) { window.location.href = 'login.html'; return; }
+            
             const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
-            const allowed = ['admin', 'manager', 'head'];
-            if (profile && allowed.includes(profile.role.toLowerCase())) {
-                document.body.style.opacity = "1";
-                document.getElementById('nav-user').innerText = profile.full_name;
+            if (profile) {
+                document.getElementById('user-display').innerText = profile.full_name;
+                document.getElementById('user-role').innerText = profile.role;
                 loadDashboardData();
-            } else {
-                document.getElementById('access-denied').style.display = 'flex';
-                document.body.style.opacity = "1";
             }
         }
 
         async function loadDashboardData() {
             const { data: events } = await supabaseClient.from('events').select('*');
             if (!events) return;
-
-            const stats = {
-                reels: { total: 0, monthly: Array(12).fill(0) },
-                corp: { total: 0, monthly: Array(12).fill(0) },
-                serv: { total: 0, monthly: Array(12).fill(0) }
-            };
-
+            const stats = { reels: { total: 0, monthly: Array(12).fill(0) }, corp: { total: 0, monthly: Array(12).fill(0) }, serv: { total: 0, monthly: Array(12).fill(0) } };
             events.forEach(ev => {
                 const m = new Date(ev.event_date).getMonth();
                 const cat = ev.category.toLowerCase();
@@ -115,51 +156,29 @@
                 else if (cat === 'corporate event') { stats.corp.total++; stats.corp.monthly[m]++; }
                 else if (cat === 'services') { stats.serv.total++; stats.serv.monthly[m]++; }
             });
-
-            // Calculate Global Maximum for Y-Axis Sync
-            const allMonthlyValues = [
-                ...stats.reels.monthly, 
-                ...stats.corp.monthly, 
-                ...stats.serv.monthly
-            ];
-            const globalMax = Math.max(...allMonthlyValues) + 1; // Add 1 for visual padding
-
+            const globalMax = Math.max(...[...stats.reels.monthly, ...stats.corp.monthly, ...stats.serv.monthly]) + 1;
             document.getElementById('total-reels').innerText = stats.reels.total;
             document.getElementById('total-corp').innerText = stats.corp.total;
             document.getElementById('total-serv').innerText = stats.serv.total;
-
-            createChart('chartReels', 'Reels', stats.reels.monthly, '#a855f7', globalMax);
-            createChart('chartCorp', 'Corporate', stats.corp.monthly, '#3b82f6', globalMax);
-            createChart('chartServ', 'Services', stats.serv.monthly, '#10b981', globalMax);
+            createChart('chartReels', stats.reels.monthly, '#a855f7', globalMax);
+            createChart('chartCorp', stats.corp.monthly, '#3b82f6', globalMax);
+            createChart('chartServ', stats.serv.monthly, '#10b981', globalMax);
         }
 
-        function createChart(id, label, data, color, maxScale) {
+        function createChart(id, data, color, maxScale) {
             new Chart(document.getElementById(id), {
                 type: 'bar',
                 data: {
                     labels: ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'],
-                    datasets: [{
-                        data: data,
-                        backgroundColor: color + '44',
-                        borderColor: color,
-                        borderWidth: 2,
-                        borderRadius: 4
-                    }]
+                    datasets: [{ data: data, backgroundColor: color + '44', borderColor: color, borderWidth: 2, borderRadius: 4 }]
                 },
-                options: {
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            max: maxScale, // SYNCED SCALE
-                            ticks: { color: 'rgba(255,255,255,0.2)', stepSize: 1 }, 
-                            grid: { color: 'rgba(255,255,255,0.05)' } 
-                        },
-                        x: { ticks: { color: 'rgba(255,255,255,0.2)' }, grid: { display: false } }
-                    }
-                }
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { max: maxScale, ticks: { color: 'rgba(255,255,255,0.2)', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: 'rgba(255,255,255,0.2)' }, grid: { display: false } } } }
             });
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
         }
 
         checkAccess();
