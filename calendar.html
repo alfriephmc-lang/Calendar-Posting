@@ -20,7 +20,7 @@
 
         body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: #fff; height: 100vh; margin: 0; display: flex; overflow: hidden; }
 
-        /* Sidebar Logic */
+        /* Sidebar Styling */
         #main-sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 280px; background: var(--card-bg); border-right: 1px solid var(--border); z-index: 100; transition: transform 0.3s ease; display: flex; flex-direction: column; }
         @media (max-width: 1023px) { #main-sidebar { transform: translateX(-100%); } #main-sidebar.active { transform: translateX(0); box-shadow: 20px 0 50px rgba(0,0,0,0.8); } }
         @media (min-width: 1024px) { #main-sidebar { position: relative; transform: none !important; flex-shrink: 0; } }
@@ -31,7 +31,7 @@
         .fc-event { border: none !important; padding: 4px 8px !important; border-radius: 6px !important; font-weight: 600; cursor: pointer; font-size: 0.75rem; }
         .fc-event-time { display: none !important; }
 
-        /* Category Color Coding - Matches the 'replace' logic in JS */
+        /* Category CSS classes */
         .event-reels { background: rgba(168, 85, 247, 0.15) !important; color: #d8b4fe !important; border-left: 3px solid var(--reels) !important; }
         .event-corporate-event { background: rgba(59, 130, 246, 0.15) !important; color: #93c5fd !important; border-left: 3px solid var(--corporate) !important; }
         .event-services { background: rgba(16, 185, 129, 0.15) !important; color: var(--accent) !important; border-left: 3px solid var(--accent) !important; }
@@ -49,12 +49,12 @@
         <div class="p-8 flex flex-col items-center">
             <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-16 mb-6">
             <div class="w-full bg-white/5 rounded-2xl p-4 border border-white/5 text-center">
-                <p id="user-display" class="text-xs font-bold text-emerald-400 truncate">Verifying...</p>
+                <p id="user-display" class="text-xs font-bold text-emerald-400 truncate">Verifying Auth...</p>
                 <p id="user-role" class="text-[9px] uppercase tracking-widest opacity-40 mt-1 italic">Guest</p>
             </div>
         </div>
         <div class="px-6 flex-1">
-            <button onclick="openCreateModal()" id="admin-add-btn" class="hidden w-full py-4 bg-emerald-500 text-black text-[10px] font-black rounded-xl uppercase tracking-widest shadow-lg shadow-emerald-500/10 hover:bg-emerald-400 transition-all">+ New Entry</button>
+            <button onclick="openCreateModal()" id="admin-add-btn" class="hidden w-full py-4 bg-emerald-500 text-black text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/10">+ New Entry</button>
         </div>
         <div class="p-8 border-t border-white/5">
             <button onclick="handleLogout()" class="w-full text-[10px] text-red-500/40 uppercase font-black tracking-widest hover:text-red-500 transition-colors">Sign Out</button>
@@ -67,7 +67,7 @@
 
     <div id="details-drawer">
         <div class="p-6 border-b border-white/5 flex justify-between items-center">
-            <span id="drawer-category" class="text-[10px] uppercase font-black tracking-widest text-emerald-500">Details</span>
+            <span id="drawer-category" class="text-[10px] uppercase font-black tracking-widest text-emerald-500">Service Info</span>
             <button onclick="closeDrawer()" class="text-3xl opacity-20 hover:opacity-100">&times;</button>
         </div>
         <div class="p-10 flex-1 overflow-y-auto">
@@ -77,27 +77,27 @@
             <p id="side-desc" class="text-sm text-white/60 leading-relaxed whitespace-pre-wrap"></p>
         </div>
         <div id="staff-controls" class="hidden p-6 border-t border-white/5 flex gap-3">
-            <button onclick="openEditModal()" class="flex-1 py-3 border border-white/10 rounded-xl text-xs">Edit</button>
-            <button onclick="deleteEvent()" class="flex-1 py-3 border border-red-500/20 text-red-500 rounded-xl text-xs">Delete</button>
+            <button onclick="openEditModal()" class="flex-1 py-3 border border-white/10 rounded-xl text-xs hover:bg-white/5">Edit</button>
+            <button onclick="deleteEvent()" class="flex-1 py-3 border border-red-500/20 text-red-500 rounded-xl text-xs hover:bg-red-500/10">Delete</button>
         </div>
     </div>
 
     <div id="event-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl hidden z-[300] flex items-center justify-center p-6">
         <div class="bg-[#051a15] p-8 rounded-[32px] w-full max-w-md border border-white/10">
             <h3 class="text-center font-black uppercase text-emerald-500 text-[10px] tracking-[4px] mb-8">Schedule Event</h3>
-            <input type="text" id="new-title" placeholder="Title" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5">
-            <select id="new-category" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5 text-sm">
-                <option value="reels">Reels</option>
-                <option value="corporate event">Corporate Event</option>
-                <option value="services">Services</option>
+            <input type="text" id="new-title" placeholder="Event Title" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5">
+            <select id="new-category" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5 text-sm appearance-none cursor-pointer">
+                <option value="reels" class="bg-black">Reels</option>
+                <option value="corporate event" class="bg-black">Corporate Event</option>
+                <option value="services" class="bg-black">Services</option>
             </select>
             <div class="flex gap-4 mb-4">
-                <input type="date" id="new-date" class="flex-1 bg-white/5 p-4 rounded-xl text-sm outline-none">
-                <input type="time" id="new-time" class="flex-1 bg-white/5 p-4 rounded-xl text-sm outline-none">
+                <input type="date" id="new-date" class="flex-1 bg-white/5 p-4 rounded-xl text-sm outline-none border border-white/5">
+                <input type="time" id="new-time" class="flex-1 bg-white/5 p-4 rounded-xl text-sm outline-none border border-white/5">
             </div>
-            <textarea id="new-desc" placeholder="Notes..." class="w-full bg-white/5 p-4 rounded-xl mb-6 h-24 outline-none"></textarea>
+            <textarea id="new-desc" placeholder="Details/Notes..." class="w-full bg-white/5 p-4 rounded-xl mb-6 h-24 outline-none border border-white/5"></textarea>
             <div class="flex gap-4">
-                <button onclick="saveEvent()" class="flex-grow bg-emerald-500 py-4 rounded-xl text-black font-black text-xs uppercase">Confirm</button>
+                <button onclick="saveEvent()" class="flex-grow bg-emerald-500 py-4 rounded-xl text-black font-black text-xs uppercase transition-all shadow-lg shadow-emerald-500/20">Confirm</button>
                 <button onclick="toggleModal(false)" class="px-6 text-[10px] font-bold opacity-30">Cancel</button>
             </div>
         </div>
@@ -111,7 +111,7 @@
         let calendar, activeEventId, isEditMode, userRole = 'guest';
 
         async function init() {
-            // Listen for Auth Session
+            // Monitor Auth Changes
             supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 if (session) {
                     const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
@@ -120,7 +120,6 @@
                         document.getElementById('user-display').innerText = profile.full_name;
                         document.getElementById('user-role').innerText = profile.role;
                         
-                        // Check permissions
                         const canEdit = ['admin', 'manager', 'staff'].includes(userRole);
                         document.getElementById('admin-add-btn').classList.toggle('hidden', !canEdit);
                         document.getElementById('staff-controls').classList.toggle('hidden', !canEdit);
@@ -130,7 +129,8 @@
                 }
             });
 
-            calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
                 height: '100%',
@@ -149,7 +149,7 @@
                     document.getElementById('side-title').innerText = info.event.title;
                     document.getElementById('side-date').innerText = info.event.startStr;
                     document.getElementById('side-time').innerText = props.time;
-                    document.getElementById('side-desc').innerText = props.description;
+                    document.getElementById('side-desc').innerText = props.description || '';
                     document.getElementById('drawer-category').innerText = props.category;
                     document.getElementById('details-drawer').classList.add('open');
                 }
@@ -181,17 +181,18 @@
                 description: document.getElementById('new-desc').value
             };
 
-            if (isEditMode) await supabaseClient.from('events').update(data).eq('id', activeEventId);
-            else {
+            if (isEditMode) {
+                await supabaseClient.from('events').update(data).eq('id', activeEventId);
+            } else {
                 const { data: { user } } = await supabaseClient.auth.getUser();
                 data.created_by = user.id;
                 await supabaseClient.from('events').insert([data]);
             }
-            toggleModal(false); calendar.refetchEvents();
+            toggleModal(false); closeDrawer(); calendar.refetchEvents();
         }
 
         async function deleteEvent() {
-            if (confirm("Delete entry?")) {
+            if (confirm("Delete this event?")) {
                 await supabaseClient.from('events').delete().eq('id', activeEventId);
                 closeDrawer(); calendar.refetchEvents();
             }
@@ -199,8 +200,11 @@
 
         async function handleLogout() {
             await supabaseClient.auth.signOut();
-            // Redirect to your login page file
-            window.location.href = 'login.html'; 
+            // Robust redirect for GitHub Pages
+            const pathParts = window.location.pathname.split('/');
+            pathParts.pop(); // Remove 'calendar.html'
+            const newPath = pathParts.join('/') + '/login.html';
+            window.location.href = newPath;
         }
 
         init();
