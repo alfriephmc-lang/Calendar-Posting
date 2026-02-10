@@ -28,10 +28,10 @@
         /* Calendar Styling */
         #calendar-container { flex: 1; min-width: 0; padding: 10px; display: flex; flex-direction: column; }
         .fc { height: 100% !important; background: var(--card-bg); border-radius: 24px; padding: 15px; border: 1px solid var(--border) !important; }
-        .fc-event { border: none !important; padding: 4px 8px !important; border-radius: 6px !important; font-weight: 600; cursor: pointer; font-size: 0.8rem; }
+        .fc-event { border: none !important; padding: 4px 8px !important; border-radius: 6px !important; font-weight: 600; cursor: pointer; font-size: 0.75rem; }
         .fc-event-time { display: none !important; }
 
-        /* Category Color Coding */
+        /* Category Color Coding - Matches the 'replace' logic in JS */
         .event-reels { background: rgba(168, 85, 247, 0.15) !important; color: #d8b4fe !important; border-left: 3px solid var(--reels) !important; }
         .event-corporate-event { background: rgba(59, 130, 246, 0.15) !important; color: #93c5fd !important; border-left: 3px solid var(--corporate) !important; }
         .event-services { background: rgba(16, 185, 129, 0.15) !important; color: var(--accent) !important; border-left: 3px solid var(--accent) !important; }
@@ -49,7 +49,7 @@
         <div class="p-8 flex flex-col items-center">
             <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-16 mb-6">
             <div class="w-full bg-white/5 rounded-2xl p-4 border border-white/5 text-center">
-                <p id="user-display" class="text-xs font-bold text-emerald-400 truncate">Loading User...</p>
+                <p id="user-display" class="text-xs font-bold text-emerald-400 truncate">Verifying...</p>
                 <p id="user-role" class="text-[9px] uppercase tracking-widest opacity-40 mt-1 italic">Guest</p>
             </div>
         </div>
@@ -74,7 +74,7 @@
             <h2 id="side-title" class="text-3xl font-black mb-3 leading-tight"></h2>
             <p id="side-date" class="text-emerald-400 text-sm font-bold mb-1"></p>
             <p id="side-time" class="text-white/40 text-xs mb-8"></p>
-            <p id="side-desc" class="text-sm text-white/60 leading-relaxed"></p>
+            <p id="side-desc" class="text-sm text-white/60 leading-relaxed whitespace-pre-wrap"></p>
         </div>
         <div id="staff-controls" class="hidden p-6 border-t border-white/5 flex gap-3">
             <button onclick="openEditModal()" class="flex-1 py-3 border border-white/10 rounded-xl text-xs">Edit</button>
@@ -87,9 +87,9 @@
             <h3 class="text-center font-black uppercase text-emerald-500 text-[10px] tracking-[4px] mb-8">Schedule Event</h3>
             <input type="text" id="new-title" placeholder="Title" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5">
             <select id="new-category" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5 text-sm">
-                <option value="reels" class="bg-black">Reels</option>
-                <option value="corporate event" class="bg-black">Corporate Event</option>
-                <option value="services" class="bg-black">Services</option>
+                <option value="reels">Reels</option>
+                <option value="corporate event">Corporate Event</option>
+                <option value="services">Services</option>
             </select>
             <div class="flex gap-4 mb-4">
                 <input type="date" id="new-date" class="flex-1 bg-white/5 p-4 rounded-xl text-sm outline-none">
@@ -111,28 +111,30 @@
         let calendar, activeEventId, isEditMode, userRole = 'guest';
 
         async function init() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            
-            if (session) {
-                const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
-                if (profile) {
-                    userRole = profile.role;
-                    document.getElementById('user-display').innerText = profile.full_name;
-                    document.getElementById('user-role').innerText = profile.role;
-                    
-                    if (['admin', 'manager', 'staff'].includes(userRole)) {
-                        document.getElementById('admin-add-btn').classList.remove('hidden');
-                        document.getElementById('staff-controls').classList.remove('hidden');
+            // Listen for Auth Session
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (session) {
+                    const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', session.user.id).single();
+                    if (profile) {
+                        userRole = profile.role;
+                        document.getElementById('user-display').innerText = profile.full_name;
+                        document.getElementById('user-role').innerText = profile.role;
+                        
+                        // Check permissions
+                        const canEdit = ['admin', 'manager', 'staff'].includes(userRole);
+                        document.getElementById('admin-add-btn').classList.toggle('hidden', !canEdit);
+                        document.getElementById('staff-controls').classList.toggle('hidden', !canEdit);
                     }
+                } else {
+                    document.getElementById('user-display').innerText = "Guest View";
                 }
-            } else {
-                document.getElementById('user-display').innerText = "Guest User";
-            }
+            });
 
             calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
                 initialView: 'dayGridMonth',
                 headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
                 height: '100%',
+                displayEventTime: false,
                 events: async (info, success) => {
                     const { data } = await supabaseClient.from('events').select('*');
                     success((data || []).map(e => ({
@@ -158,6 +160,17 @@
         function toggleModal(s) { document.getElementById('event-modal').classList.toggle('hidden', !s); }
         function openCreateModal() { isEditMode = false; toggleModal(true); }
         function closeDrawer() { document.getElementById('details-drawer').classList.remove('open'); }
+
+        function openEditModal() {
+            isEditMode = true;
+            const ev = calendar.getEventById(activeEventId);
+            document.getElementById('new-title').value = ev.title;
+            document.getElementById('new-category').value = ev.extendedProps.category;
+            document.getElementById('new-date').value = ev.startStr;
+            document.getElementById('new-time').value = ev.extendedProps.time;
+            document.getElementById('new-desc').value = ev.extendedProps.description;
+            toggleModal(true);
+        }
 
         async function saveEvent() {
             const data = { 
@@ -186,7 +199,8 @@
 
         async function handleLogout() {
             await supabaseClient.auth.signOut();
-            window.location.href = 'register.html';
+            // Redirect to your login page file
+            window.location.href = 'login.html'; 
         }
 
         init();
