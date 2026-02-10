@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ProjectVibe | Service Scheduler</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-deep: #020f0c;
+            --card-bg: #051a15;
+            --accent: #10b981;
+            --reels: #a855f7;
+            --corporate: #3b82f6;
+            --border: rgba(16, 185, 129, 0.1);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; background: var(--bg-deep); color: #fff; 
+            height: 100vh; margin: 0; display: flex; overflow: hidden;
+        }
+
+        /* --- COLLAPSIBLE SIDEBAR --- */
+        #main-sidebar {
+            position: fixed; left: 0; top: 0; bottom: 0; width: 280px;
+            background: var(--card-bg); border-right: 1px solid var(--border);
+            z-index: 100; transition: transform 0.3s ease;
+            display: flex; flex-direction: column;
+        }
+        @media (max-width: 1023px) {
+            #main-sidebar { transform: translateX(-100%); }
+            #main-sidebar.active { transform: translateX(0); box-shadow: 20px 0 50px rgba(0,0,0,0.8); }
+        }
+        @media (min-width: 1024px) {
+            #main-sidebar { position: relative; transform: none !important; flex-shrink: 0; }
+        }
+
+        /* --- CALENDAR --- */
+        #calendar-container { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 10px; }
+        @media (min-width: 1024px) { #calendar-container { padding: 24px; } }
+
+        .fc { height: 100% !important; background: var(--card-bg); border-radius: 24px; padding: 10px; border: 1px solid var(--border) !important; }
+        .fc-event-time { display: none !important; }
+
+        /* Category Event Colors */
+        .event-reels { background: rgba(168, 85, 247, 0.2) !important; color: #d8b4fe !important; border-left: 4px solid var(--reels) !important; }
+        .event-corporate { background: rgba(59, 130, 246, 0.2) !important; color: #93c5fd !important; border-left: 4px solid var(--corporate) !important; }
+        .event-services { background: rgba(16, 185, 129, 0.2) !important; color: #6ee7b7 !important; border-left: 4px solid var(--accent) !important; }
+
+        .fc-event { border: none !important; padding: 4px 8px !important; border-radius: 6px !important; font-weight: 600; cursor: pointer; }
+
+        /* UI Styling */
+        .logo-container { perspective: 1000px; padding: 30px 20px; }
+        .logo-3d-card { width: 100%; height: 90px; transform-style: preserve-3d; animation: rotate_logo 6s ease-in-out infinite; display: flex; align-items: center; justify-content: center; }
+        .logo-3d-card img { height: 100%; filter: drop-shadow(0 15px 30px rgba(0,0,0,0.6)); }
+        @keyframes rotate_logo { 0%, 100% { transform: rotateY(-12deg); } 50% { transform: rotateY(12deg); } }
+
+        #menu-toggle {
+            position: fixed; bottom: 25px; left: 25px; z-index: 150;
+            width: 55px; height: 55px; background: var(--accent); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; color: #000;
+        }
+        @media (min-width: 1024px) { #menu-toggle { display: none; } }
+
+        /* Drawer */
+        #details-drawer {
+            position: fixed; right: 0; top: 0; bottom: 0; width: 100%; max-width: 360px;
+            background: #041411; transform: translateX(100%); transition: transform 0.4s ease;
+            z-index: 200; border-left: 1px solid var(--border); display: flex; flex-direction: column;
+        }
+        #details-drawer.open { transform: translateX(0); }
+    </style>
+</head>
+<body>
+
+    <button id="menu-toggle" onclick="document.getElementById('main-sidebar').classList.toggle('active')">☰</button>
+
+    <aside id="main-sidebar">
+        <div class="logo-container">
+            <div class="logo-3d-card"><img src="https://i.imgur.com/VbZKWAf.png" alt="Logo"></div>
+        </div>
+        <div class="px-6 flex-1">
+            <div class="bg-white/5 rounded-2xl p-5 mb-4 border border-white/5 text-center">
+                <p class="text-[9px] text-emerald-500/50 uppercase tracking-[2px] mb-1">Current User</p>
+                <div id="user-display" class="text-xs font-bold truncate">Checking...</div>
+                <div id="user-role" class="text-[10px] uppercase text-white/30 mt-1">Guest</div>
+            </div>
+            <button onclick="openCreateModal()" id="admin-add-btn" class="hidden w-full py-4 bg-emerald-500 text-black text-[10px] font-black rounded-xl uppercase mb-6">+ Schedule Service</button>
+        </div>
+        <div class="p-8 border-t border-white/5 text-center">
+            <button onclick="handleLogout()" class="text-[10px] text-red-500/40 uppercase font-bold tracking-widest hover:text-red-500 transition-colors">Sign Out</button>
+        </div>
+    </aside>
+
+    <div id="calendar-container">
+        <div id="calendar"></div>
+    </div>
+
+    <div id="details-drawer">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center">
+            <span id="drawer-category" class="text-[10px] uppercase font-black tracking-widest">Details</span>
+            <button onclick="closeDrawer()" class="text-3xl opacity-20 hover:opacity-100">&times;</button>
+        </div>
+        <div class="p-10 flex-1 overflow-y-auto">
+            <h2 id="side-title" class="text-3xl font-black mb-3 leading-tight"></h2>
+            <div id="side-date" class="block text-emerald-400 text-sm font-bold mb-1"></div>
+            <div id="side-time" class="block text-white/40 text-xs mb-8"></div>
+            <p id="side-desc" class="text-sm text-white/60 leading-relaxed whitespace-pre-wrap"></p>
+        </div>
+        <div id="staff-controls" class="hidden p-6 border-t border-white/5 flex gap-3">
+            <button onclick="openEditModal()" class="flex-1 py-3 border border-white/10 rounded-xl text-xs hover:bg-white/5">Edit</button>
+            <button onclick="deleteEvent()" class="flex-1 py-3 border border-red-500/20 text-red-500 rounded-xl text-xs hover:bg-red-500/10">Delete</button>
+        </div>
+    </div>
+
+    <div id="event-modal" class="fixed inset-0 bg-black/98 backdrop-blur-xl hidden z-[300] flex items-center justify-center p-6">
+        <div class="bg-[#051a15] p-10 rounded-[32px] w-full max-w-md border border-white/10">
+            <h3 class="text-center font-black uppercase text-emerald-500 text-[10px] tracking-[5px] mb-8">Schedule Post</h3>
+            
+            <label class="text-[9px] uppercase opacity-40 ml-1">Title</label>
+            <input type="text" id="new-title" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5">
+            
+            <label class="text-[9px] uppercase opacity-40 ml-1">Category</label>
+            <select id="new-category" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/5 text-sm appearance-none">
+                <option value="reels" class="bg-black">Reels</option>
+                <option value="corporate event" class="bg-black">Corporate Event</option>
+                <option value="services" class="bg-black">Services</option>
+            </select>
+
+            <div class="flex gap-4 mb-4">
+                <div class="flex-1">
+                    <label class="text-[9px] uppercase opacity-40 ml-1">Date</label>
+                    <input type="date" id="new-date" class="w-full bg-white/5 p-4 rounded-xl outline-none border border-white/5 text-sm">
+                </div>
+                <div class="flex-1">
+                    <label class="text-[9px] uppercase opacity-40 ml-1">Time</label>
+                    <input type="time" id="new-time" class="w-full bg-white/5 p-4 rounded-xl outline-none border border-white/5 text-sm">
+                </div>
+            </div>
+
+            <label class="text-[9px] uppercase opacity-40 ml-1">Description</label>
+            <textarea id="new-desc" class="w-full bg-white/5 p-4 rounded-xl mb-8 h-24 outline-none border border-white/5"></textarea>
+            
+            <div class="flex gap-4">
+                <button onclick="saveEvent()" class="flex-grow bg-emerald-500 py-4 rounded-xl text-black font-black text-xs uppercase shadow-xl shadow-emerald-500/20">Confirm</button>
+                <button onclick="toggleModal(false)" class="px-6 text-[10px] uppercase font-bold opacity-30">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://ajvphaauqsrukljkxmyf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqdnBoYWF1cXNydWtsamt4bXlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2NjE3NjgsImV4cCI6MjA4NjIzNzc2OH0.M85d-Z2h5lD8UJxB7SNx2MZwa2owmehprRYXMGpsSis';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let calendar, activeEventId, isEditMode, userRole = 'guest';
+
+        async function init() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
+                if (profile) {
+                    userRole = profile.role;
+                    document.getElementById('user-display').innerText = profile.full_name;
+                    document.getElementById('user-role').innerText = profile.role;
+                    
+                    // Show Add button for Admin, Manager, Staff
+                    if (['admin', 'manager', 'staff'].includes(profile.role)) {
+                        document.getElementById('admin-add-btn').classList.remove('hidden');
+                        document.getElementById('staff-controls').classList.remove('hidden');
+                    }
+                }
+            } else {
+                document.getElementById('user-display').innerText = "Public View";
+            }
+
+            calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+                initialView: 'dayGridMonth',
+                headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
+                height: '100%',
+                dayMaxEvents: 3,
+                events: async (info, success) => {
+                    const { data } = await supabaseClient.from('events').select('*');
+                    success((data || []).map(e => ({
+                        id: e.id, title: e.title, start: e.event_date,
+                        className: `event-${e.category.replace(' ', '-')}`,
+                        extendedProps: { description: e.description, category: e.category, time: e.event_time }
+                    })));
+                },
+                eventClick: (info) => {
+                    const props = info.event.extendedProps;
+                    activeEventId = info.event.id;
+                    document.getElementById('side-title').innerText = info.event.title;
+                    document.getElementById('side-date').innerText = info.event.startStr;
+                    document.getElementById('side-time').innerText = props.time;
+                    document.getElementById('side-desc').innerText = props.description || 'No notes.';
+                    document.getElementById('drawer-category').innerText = props.category;
+                    document.getElementById('details-drawer').classList.add('open');
+                    if (window.innerWidth < 1024) document.getElementById('main-sidebar').classList.remove('active');
+                }
+            });
+            calendar.render();
+        }
+
+        function closeDrawer() { document.getElementById('details-drawer').classList.remove('open'); }
+        function toggleModal(s) { document.getElementById('event-modal').classList.toggle('hidden', !s); }
+        function openCreateModal() { isEditMode = false; toggleModal(true); }
+
+        function openEditModal() {
+            isEditMode = true;
+            const ev = calendar.getEventById(activeEventId);
+            document.getElementById('new-title').value = ev.title;
+            document.getElementById('new-category').value = ev.extendedProps.category;
+            document.getElementById('new-date').value = ev.startStr;
+            document.getElementById('new-time').value = ev.extendedProps.time;
+            document.getElementById('new-desc').value = ev.extendedProps.description;
+            toggleModal(true);
+        }
+
+        async function saveEvent() {
+            const data = { 
+                title: document.getElementById('new-title').value, 
+                category: document.getElementById('new-category').value,
+                event_date: document.getElementById('new-date').value, 
+                event_time: document.getElementById('new-time').value,
+                description: document.getElementById('new-desc').value 
+            };
+
+            if (isEditMode) {
+                await supabaseClient.from('events').update(data).eq('id', activeEventId);
+            } else {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                data.created_by = user.id;
+                await supabaseClient.from('events').insert([data]);
+            }
+            toggleModal(false); closeDrawer(); calendar.refetchEvents();
+        }
+
+        async function deleteEvent() {
+            if (confirm("Delete this scheduled post?")) {
+                await supabaseClient.from('events').delete().eq('id', activeEventId);
+                closeDrawer(); calendar.refetchEvents();
+            }
+        }
+
+        function handleLogout() { supabaseClient.auth.signOut().then(() => location.reload()); }
+
+        init();
+    </script>
+</body>
+</html>
