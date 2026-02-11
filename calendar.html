@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProjectVibe | Full Schedule</title>
+    <title>ProjectVibe | Full Access Schedule</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -20,12 +20,12 @@
 
         body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: #fff; height: 100vh; margin: 0; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* Top Nav */
+        /* Navigation */
         nav { background: rgba(5, 26, 21, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 0 1.5rem; height: 70px; display: flex; align-items: center; justify-content: space-between; z-index: 1000; flex-shrink: 0; }
         .nav-link { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.4); padding: 10px 15px; cursor: pointer; transition: 0.3s; }
         .nav-link.active { color: var(--accent); background: rgba(16, 185, 129, 0.1); border-radius: 8px; }
 
-        /* Sidebar & Safe Area Fix */
+        /* Sidebar & Safe Area */
         #main-sidebar { 
             width: 280px; background: var(--card-bg); border-right: 1px solid var(--border); 
             display: flex; flex-direction: column; z-index: 2000; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
@@ -40,16 +40,15 @@
             border-top: 1px solid var(--border);
         }
 
-        /* Calendar Container */
+        /* Calendar UI */
         #calendar-container { flex: 1; min-width: 0; padding: 15px; position: relative; overflow: hidden; }
         .fc { height: 100% !important; background: var(--card-bg); border-radius: 24px; padding: 10px; border: 1px solid var(--border) !important; color: white; }
         .fc-event { border: none !important; padding: 4px 8px !important; border-radius: 6px !important; font-weight: 600; cursor: pointer; font-size: 0.7rem; }
 
-        /* Details Drawer */
         #details-drawer { position: fixed; right: 0; top: 70px; bottom: 0; width: 100%; max-width: 360px; background: #041411; transform: translateX(100%); transition: transform 0.4s ease; z-index: 1500; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
         #details-drawer.open { transform: translateX(0); }
 
-        /* Floating Menu Toggle - Highest Z-Index */
+        /* Floating Menu Toggle */
         #menu-toggle { 
             position: fixed; bottom: 30px; right: 25px; z-index: 3000; 
             width: 60px; height: 60px; background: var(--accent); border-radius: 50%; 
@@ -58,13 +57,13 @@
         }
         @media (min-width: 1024px) { #menu-toggle { display: none !important; } }
 
-        /* Loader & Toast */
+        /* Loaders & Toasts */
         #loader { position: absolute; inset: 0; background: rgba(2, 15, 12, 0.8); backdrop-filter: blur(4px); z-index: 50; display: none; align-items: center; justify-content: center; }
         .spinner { width: 40px; height: 40px; border: 3px solid rgba(16, 185, 129, 0.1); border-top: 3px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #toast { position: fixed; top: 85px; left: 50%; transform: translateX(-50%); z-index: 4000; padding: 12px 24px; border-radius: 12px; font-size: 11px; font-weight: bold; display: none; text-transform: uppercase; }
 
-        /* Event Coloring */
+        /* Event Categories */
         .event-reels { border-left: 4px solid var(--reels) !important; background: rgba(168, 85, 247, 0.1) !important; color: #d8b4fe !important; }
         .event-corporate-event { border-left: 4px solid var(--corporate) !important; background: rgba(59, 130, 246, 0.1) !important; color: #93c5fd !important; }
         .event-services { border-left: 4px solid var(--accent) !important; background: rgba(16, 185, 129, 0.1) !important; color: #6ee7b7 !important; }
@@ -91,7 +90,7 @@
                 </div>
             </div>
             <div class="px-6 py-8 flex-1">
-                <button onclick="openCreateModal()" id="admin-add-btn" class="hidden w-full py-4 bg-emerald-500 text-black text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-emerald-400 shadow-lg shadow-emerald-500/10">
+                <button onclick="openCreateModal()" class="w-full py-4 bg-emerald-500 text-black text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-emerald-400 shadow-lg shadow-emerald-500/10">
                     + New Entry
                 </button>
             </div>
@@ -118,9 +117,9 @@
                 <p id="side-time" class="text-white/40 text-xs mb-8"></p>
                 <p id="side-desc" class="text-sm text-white/60 leading-relaxed whitespace-pre-wrap"></p>
             </div>
-            <div id="staff-controls" class="hidden p-6 border-t border-white/5 flex gap-3">
-                <button onclick="openEditModal()" class="flex-1 py-3 border border-white/10 rounded-xl text-xs uppercase font-black tracking-widest">Edit</button>
-                <button onclick="deleteEvent()" class="flex-1 py-3 border border-red-500/20 text-red-500 rounded-xl text-xs uppercase font-black tracking-widest">Delete</button>
+            <div class="p-6 border-t border-white/5 flex gap-3">
+                <button onclick="openEditModal()" class="flex-1 py-3 border border-white/10 rounded-xl text-xs uppercase font-black tracking-widest hover:bg-white/5 transition-all">Edit</button>
+                <button onclick="deleteEvent()" class="flex-1 py-3 border border-red-500/20 text-red-500 rounded-xl text-xs uppercase font-black tracking-widest hover:bg-red-500/5 transition-all">Delete</button>
             </div>
         </div>
     </div>
@@ -128,7 +127,7 @@
     <div id="auth-modal" class="fixed inset-0 bg-black/90 backdrop-blur-xl hidden z-[5000] flex items-center justify-center p-6 text-center">
         <div class="bg-[#051a15] p-10 rounded-[32px] border border-red-500/20 max-w-sm">
             <h3 class="font-black uppercase text-red-500 text-sm tracking-[3px] mb-4">Access Denied</h3>
-            <p class="text-white/40 text-xs mb-8">Role (Staff) is not authorized for Dashboard.</p>
+            <p class="text-white/40 text-xs mb-8">This dashboard is for Management roles only.</p>
             <button onclick="toggleAuthModal(false)" class="w-full bg-white/5 py-4 rounded-xl text-xs uppercase font-black">Go Back</button>
         </div>
     </div>
@@ -178,9 +177,6 @@
                 userRole = profile.role.toLowerCase();
                 document.getElementById('user-display').innerText = profile.full_name;
                 document.getElementById('user-role').innerText = profile.role;
-                const isAdmin = ['admin', 'manager', 'head'].includes(userRole);
-                document.getElementById('admin-add-btn').classList.toggle('hidden', !isAdmin);
-                document.getElementById('staff-controls').classList.toggle('hidden', !isAdmin);
             }
         }
 
